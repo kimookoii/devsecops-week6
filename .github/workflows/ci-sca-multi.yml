@@ -51,18 +51,19 @@ jobs:
           if npm run | grep -q "test"; then npm test || true; else echo "No test script"; fi
 
       - name: Run Snyk - npm
-        if: ${{ secrets.SNYK_TOKEN && hashFiles('**/package.json') != '' }}
+        if: ${{ hashFiles('**/package.json') != '' }}
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: |
+          echo "Running Snyk for npm..."
           snyk test --package-manager=npm || echo "snyk-npm-failed" > snyk-npm-exit.txt
 
       - name: Run Snyk - composer
-        if: ${{ secrets.SNYK_TOKEN && (hashFiles('**/composer.json') != '') }}
+        if: ${{ hashFiles('**/composer.json') != '' }}
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: |
-          # prefer test on lockfile
+          echo "Running Snyk for composer..."
           if [ -f composer.lock ]; then
             snyk test --file=composer.lock --package-manager=composer || echo "snyk-composer-failed" > snyk-composer-exit.txt
           else
