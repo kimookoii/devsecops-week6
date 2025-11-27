@@ -1,0 +1,31 @@
+name: CI - OWASP Dependency-Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 3 * * *'  # opsional: daily at 03:00 UTC
+
+jobs:
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run OWASP Dependency-Check (Docker)
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/src" \
+            -v "${{ runner.temp }}/dc-data:/usr/share/dependency-check/data" \
+            owasp/dependency-check:latest \
+            --scan /src --format "HTML" --out /src/reports || true
+      - name: Upload HTML report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: reports/dependency-check-report.html
