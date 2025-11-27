@@ -1,0 +1,7 @@
+{
+  "name": "antrian-webapp",
+  "version": "1.0.0",
+  "description": "Placeholder package.json untuk CI SCA",
+  "private": true,
+  "dependencies": {}
+}
