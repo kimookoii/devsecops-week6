@@ -1,0 +1,89 @@
+name: CI - Multi SCA (Node + PHP)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *' # daily 03:00 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  sca-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node (if package.json present)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+        if: ${{ always() && (hashFiles('**/package.json') != '') }}
+
+      - name: Setup PHP (if composer.json present)
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+        if: ${{ always() && (hashFiles('**/composer.json') != '') }}
+
+      - name: Install Node deps (ci if lockfile)
+        if: ${{ hashFiles('**/package.json') != '' }}
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Install Composer deps
+        if: ${{ hashFiles('**/composer.json') != '' }}
+        run: |
+          composer install --no-interaction --prefer-dist --no-dev || true
+
+      - name: Run tests (node) if available
+        if: ${{ hashFiles('**/package.json') != '' && contains(steps.checkout.outputs.files, 'package.json') }}
+        run: |
+          if npm run | grep -q "test"; then npm test || true; else echo "No test script"; fi
+
+      - name: Run Snyk - npm
+        if: ${{ secrets.SNYK_TOKEN && hashFiles('**/package.json') != '' }}
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          snyk test --package-manager=npm || echo "snyk-npm-failed" > snyk-npm-exit.txt
+
+      - name: Run Snyk - composer
+        if: ${{ secrets.SNYK_TOKEN && (hashFiles('**/composer.json') != '') }}
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          # prefer test on lockfile
+          if [ -f composer.lock ]; then
+            snyk test --file=composer.lock --package-manager=composer || echo "snyk-composer-failed" > snyk-composer-exit.txt
+          else
+            snyk test --file=composer.json --package-manager=composer || echo "snyk-composer-failed" > snyk-composer-exit.txt
+          fi
+
+      - name: Run OWASP Dependency-Check (Docker)
+        run: |
+          mkdir -p reports || true
+          docker run --rm -v "${{ github.workspace }}:/src" -v "${{ runner.temp }}/dc-data:/usr/share/dependency-check/data" \
+            owasp/dependency-check:latest --scan /src --format "HTML" --out /src/reports || true
+
+      - name: Upload reports artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sca-reports
+          path: |
+            reports/dependency-check-report.html
+            snyk-npm-exit.txt
+            snyk-composer-exit.txt
+
+      - name: Summary (logs)
+        run: |
+          echo "Artifacts uploaded: sca-reports"
