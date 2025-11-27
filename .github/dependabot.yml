@@ -1,6 +1,22 @@
 version: 2
 updates:
   - package-ecosystem: "npm"
+    directory: "/"        # path to package.json
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
+    automerged_updates: false
+
+  - package-ecosystem: "composer"
     directory: "/"
     schedule:
       interval: "daily"
+    open-pull-requests-limit: 5
+    automerged_updates: false
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
+    automerged_updates: false
