@@ -302,21 +302,19 @@ File tersebut dapat ditemukan di tab Actions > Artifacts.
 ## 9. Struktur Repo yang Direkomendasikan
 
 ```
-/
-|-- src/
-|-- public/
-|-- vendor/ (composer)
-|-- node_modules/ (npm)
-|-- composer.json
-|-- composer.lock
-|-- package.json
-|-- package-lock.json
+.
+├── auth/
+│   ├── db.php
+│   └── csrf-security/
+├── ajax/
+│   ├── updateNoAntrian.php
+├── assets/
+├── Dockerfile
 |-- .github/
 |     |-- workflows/
 |     |     └── ci-sca-multi.yml
 |     └── dependabot.yml
-|-- reports/
-|-- README.md
+├── README.md
 ```
 
 ---
