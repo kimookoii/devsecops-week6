@@ -1,4 +1,4 @@
-# DevSecOps Week 7
+# DevSecOps Week 6
 
 ## Software Composition Analysis (SCA) Pipeline
 
